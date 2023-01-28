@@ -10,14 +10,14 @@
 #include "log.h"
 #include <functional>
 
-template<class T>
+template <class T>
 class MyXORLinkedList
 {
     typedef const T &Item;
 public:
     class Node
     {
-        friend class MyXORLinkedList<T>;
+        friend class MyXORLinkedList <T>;
     public:
         explicit Node (Item it) noexcept
             : node(it)
@@ -45,7 +45,8 @@ public:
         Node *XORPoint = nullptr;
     };
 public:
-    typedef const std::function<void (Item &)> &Callback;
+    typedef const std::function <void (Item &)> &Callback;
+    typedef const std::function <bool (Node *)> &PrivateCallback;
 
     MyXORLinkedList () = default;
     MyXORLinkedList (const MyXORLinkedList &rhs)
@@ -67,6 +68,17 @@ public:
 
     void clear () noexcept
     {
+        // 遍历需要基于上一个节点，所以不能先把节点删除
+        Node *arr[size()];
+        int i = 0;
+        _traverse(
+            [&arr, &i] (Node *node) {
+                arr[i++] = node;
+                return true;
+            }
+        );
+        for (int j = 0; j < i; ++j)
+            delete arr[j];
         front = nullptr;
         rear = nullptr;
         _size = 0;
@@ -139,8 +151,8 @@ public:
         return _size;
     }
 
-    template<class U>
-    friend void swap (MyXORLinkedList<U> &, MyXORLinkedList<U> &);
+    template <class U>
+    friend void swap (MyXORLinkedList <U> &, MyXORLinkedList <U> &);
 #if __cplusplus >= 201103
     MyXORLinkedList (MyXORLinkedList &&rhs) noexcept
     {
@@ -186,13 +198,31 @@ private:
 
         rear = node;
     }
+
+    void _traverse (PrivateCallback callback)
+    {
+        if (!size())
+            return;
+        Node *prev = nullptr;
+        auto *curr = front;
+        Node *next;
+
+        while (curr)
+        {
+            if (!callback(curr))
+                break;
+            next = XOR(prev, curr->XORPoint);
+            prev = curr;
+            curr = next;
+        }
+    }
 private:
     Node *rear = nullptr;
     Node *front = nullptr;
     std::size_t _size = 0;
 };
-template<class T>
-inline void swap (MyXORLinkedList<T> &lhs, MyXORLinkedList<T> &rhs)
+template <class T>
+inline void swap (MyXORLinkedList <T> &lhs, MyXORLinkedList <T> &rhs)
 {
     using std::swap;
     swap(lhs.rear, rhs.rear);

@@ -1,0 +1,12 @@
+cmake-build-debug/
+cmake-build-release/
+
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
