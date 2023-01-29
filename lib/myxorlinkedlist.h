@@ -93,6 +93,56 @@ public:
         insert(item, 0);
     }
 
+    void shift ()
+    {
+        erase(0);
+    }
+
+    void pop ()
+    {
+        erase(size() - 1);
+    }
+
+    void erase (size_t pos)
+    {
+        if (pos > size() - 1)
+            return;
+
+        if (!size() || size() == 1)
+            return clear();
+
+        if (pos == 0)
+            eraseFront();
+        else if (pos == size() - 1)
+            eraseRear();
+        else
+        {
+            int i = 0;
+
+            Node *prev = nullptr;
+            auto *curr = front;
+            Node *next;
+
+            while (curr)
+            {
+                next = XOR(prev, curr->XORPoint);
+                if (i == pos)
+                {
+                    prev->XORPoint = XOR(XOR(prev->XORPoint, curr), next);
+                    next->XORPoint = XOR(prev, XOR(curr, next->XORPoint));
+                    delete curr;
+
+                    break;
+                }
+                prev = curr;
+                curr = next;
+                i++;
+            }
+        }
+
+        _size--;
+    }
+
     void insert (Item item, std::size_t pos)
     {
         pos = pos >= _size ? _size : pos;
@@ -197,6 +247,26 @@ private:
         rear->XORPoint = XOR(rear->XORPoint, node);
 
         rear = node;
+    }
+
+    void eraseFront ()
+    {
+        Node *curr = XOR(nullptr, front->XORPoint);
+        Node *next = XOR(front, curr->XORPoint);
+        curr->XORPoint = XOR(nullptr, next);
+
+        delete front;
+        front = curr;
+    }
+
+    void eraseRear ()
+    {
+        Node *curr = XOR(rear->XORPoint, nullptr);
+        Node *prev = XOR(curr->XORPoint, rear);
+        curr->XORPoint = XOR(prev, nullptr);
+
+        delete rear;
+        rear = curr;
     }
 
     void _traverse (PrivateCallback callback)
