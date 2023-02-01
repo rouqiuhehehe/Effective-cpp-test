@@ -44,6 +44,88 @@ public:
         T node;
         Node *XORPoint = nullptr;
     };
+
+private:
+    class IteratorBase
+    {
+    public:
+        IteratorBase (Node *node, Node *prev)
+            : node(node), prev(prev) {}
+        bool operator== (const IteratorBase &rhs)
+        {
+            if (node == nullptr && rhs.node == nullptr)
+                return true;
+            if (node == nullptr || rhs.node == nullptr)
+                return false;
+            return **node == **(rhs.node);
+        }
+        bool operator!= (const IteratorBase &rhs)
+        {
+            return !(node == rhs.node);
+        }
+        virtual IteratorBase &operator++ ()
+        {
+            Node *temp = node;
+            node = XOR(prev, node->XORPoint);
+            prev = temp;
+            return *this;
+        }
+        virtual IteratorBase operator++ (int) // NOLINT(cert-dcl21-cpp)
+        {
+            auto old = *this;
+            ++*this;
+            return old;
+        }
+        Item operator* () const
+        {
+            return **node;
+        }
+        T &operator* ()
+        {
+            return **node;
+        }
+        const T *operator-> () const
+        {
+            return node->operator->();
+        }
+        T *operator-> ()
+        {
+            return node->operator->();
+        }
+
+    protected:
+        Node *node;
+        Node *prev;
+    };
+
+public:
+    class Iterator : public IteratorBase
+    {
+    public:
+        Iterator (Node *node, Node *prev)
+            : IteratorBase(node, prev) {}
+    };
+    class IteratorReverse : public IteratorBase
+    {
+    public:
+        IteratorReverse (Node *node, Node *prev)
+            : IteratorBase(node, prev) {}
+        IteratorBase &operator++ () override
+        {
+            Node *temp = IteratorBase::node;
+            IteratorBase::node = XOR(IteratorBase::node->XORPoint, IteratorBase::prev);
+            IteratorBase::prev = temp;
+
+            return *this;
+        }
+        IteratorBase operator++ (int) override // NOLINT(cert-dcl21-cpp)
+        {
+            auto old = *this;
+            ++*this;
+            return old;
+        }
+    };
+
 public:
     typedef const std::function <void (Item &)> &Callback;
     typedef const std::function <bool (Node *)> &PrivateCallback;
@@ -72,7 +154,8 @@ public:
         Node *arr[size()];
         int i = 0;
         _traverse(
-            [&arr, &i] (Node *node) {
+            [&arr, &i] (Node *node)
+            {
                 arr[i++] = node;
                 return true;
             }
@@ -91,6 +174,56 @@ public:
     void unshift (Item item)
     {
         insert(item, 0);
+    }
+
+    void shift ()
+    {
+        erase(0);
+    }
+
+    void pop ()
+    {
+        erase(size() - 1);
+    }
+
+    void erase (size_t pos)
+    {
+        if (pos > size() - 1)
+            return;
+
+        if (!size() || size() == 1)
+            return clear();
+
+        if (pos == 0)
+            eraseFront();
+        else if (pos == size() - 1)
+            eraseRear();
+        else
+        {
+            int i = 0;
+
+            Node *prev = nullptr;
+            auto *curr = front;
+            Node *next;
+
+            while (curr)
+            {
+                next = XOR(prev, curr->XORPoint);
+                if (i == pos)
+                {
+                    prev->XORPoint = XOR(XOR(prev->XORPoint, curr), next);
+                    next->XORPoint = XOR(prev, XOR(curr, next->XORPoint));
+                    delete curr;
+
+                    break;
+                }
+                prev = curr;
+                curr = next;
+                i++;
+            }
+        }
+
+        _size--;
     }
 
     void insert (Item item, std::size_t pos)
@@ -146,6 +279,44 @@ public:
         }
     }
 
+    void traverseReverse (Callback callback)
+    {
+        if (!size())
+            return;
+        Node *prev;
+        auto *curr = rear;
+        Node *next = nullptr;
+
+        while (curr)
+        {
+            callback(**curr);
+
+            prev = XOR(next, curr->XORPoint);
+            next = curr;
+            curr = prev;
+        }
+    }
+
+    Iterator begin () const
+    {
+        return Iterator(front, nullptr);
+    }
+
+    Iterator end() const
+    {
+        return Iterator(nullptr, nullptr);
+    }
+
+    IteratorReverse rbegin() const
+    {
+        return IteratorReverse(rear, nullptr);
+    }
+
+    IteratorReverse rend() const
+    {
+        return IteratorReverse(nullptr, nullptr);
+    }
+
     [[nodiscard]] std::size_t size () const
     {
         return _size;
@@ -197,6 +368,26 @@ private:
         rear->XORPoint = XOR(rear->XORPoint, node);
 
         rear = node;
+    }
+
+    void eraseFront ()
+    {
+        Node *curr = XOR(nullptr, front->XORPoint);
+        Node *next = XOR(front, curr->XORPoint);
+        curr->XORPoint = XOR(nullptr, next);
+
+        delete front;
+        front = curr;
+    }
+
+    void eraseRear ()
+    {
+        Node *curr = XOR(rear->XORPoint, nullptr);
+        Node *prev = XOR(curr->XORPoint, rear);
+        curr->XORPoint = XOR(prev, nullptr);
+
+        delete rear;
+        rear = curr;
     }
 
     void _traverse (PrivateCallback callback)
