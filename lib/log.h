@@ -7,8 +7,10 @@
 
 #include <iostream>
 #ifdef NDEBUG
-#define debug 0 && std::cout
+#define myDebug 0 && std::cout
+#define myWarning 0 && std::cout
 #else
-#define debug std::cout << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "\t"
+#define myDebug std::cout << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "\t"
+#define myWarning std::cout << __FILE__ << ":" << __LINE__ << ":" << __FUNCTION__ << "\twarning: "
 #endif
 #endif //TEST_CPP_LIB_LOG_H_

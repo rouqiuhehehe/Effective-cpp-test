@@ -17,17 +17,17 @@ void testXORLinkedList() {
     // a.traverseReverse(
     //     [] (const int &v)
     //     {
-    //         debug << v << std::endl;
+    //         myDebug << v << std::endl;
     //     }
     // );
     // for (auto &v : a)
     // {
-    //     debug << v << std::endl;
+    //     myDebug << v << std::endl;
     // }
 
     for (MyXORLinkedList <int>::IteratorReverse i = a.rbegin(); i != a.rend(); ++i)
     {
-        debug << *i << std::endl;
+        myDebug << *i << std::endl;
     }
     swap(a, b);
 }
